@@ -50,6 +50,8 @@ MapEntry<UiRoute, Map<String, String>>? getUiRoute(
   return null;
 }
 
+final _cache = <String, Widget>{};
+
 Future<Widget?> getRoute(
   BuildContext context,
   String route,
@@ -57,6 +59,7 @@ Future<Widget?> getRoute(
   Widget? child, [
   bool subRoutes = true,
 ]) async {
+  if (_cache.containsKey(route)) return _cache[route];
   final page = getUiRoute(route, pages);
   if (page == null) return null;
   final pageValue = page.key;
@@ -77,7 +80,7 @@ Future<Widget?> getRoute(
   _route = '';
   final childWidget = await getRoute(context, _route, pages, _child, false);
   if (childWidget != null) _child = childWidget;
-  return _child;
+  return _cache[route] = _child;
 }
 
 RegExp _fixRegExp(String name) {
