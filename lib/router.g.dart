@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 
 import 'pages/index.dart' as route0;
 import 'pages/about.dart' as route1;
-import 'pages/about/index.dart' as route2;
-import 'pages/about/:id.dart' as route3;
-import 'pages/about/guest.dart' as route4;
+import 'pages/root.dart' as route2;
+import 'pages/about/index.dart' as route3;
+import 'pages/about/:id.dart' as route4;
+import 'pages/about/guest.dart' as route5;
 import 'router.dart';
 
 class GeneratedRouter extends StatefulWidget {
@@ -24,32 +25,20 @@ class _GeneratedRouterState extends State<GeneratedRouter> {
     super.initState();
     pages['/'] = route0.HomePage();
     pages['/about'] = route1.AboutPage();
-    pages['/about/'] = route2.AboutDetails();
-    pages['/about/:id'] = route3.AccountPage();
-    pages['/about/guest'] = route4.GuestPage();
+    pages[''] = route2.RootPage();
+    pages['/about/'] = route3.AboutDetails();
+    pages['/about/:id'] = route4.AccountPage();
+    pages['/about/guest'] = route5.GuestPage();
     loadRoute();
   }
 
   void loadRoute() async {
-    for (final page in pages.entries) {
-      final pageRoute = RegExp(page.key);
-      if (pageRoute.hasMatch(route)) {
-        final pageValue = page.value;
-        final args = <String, String>{};
-        for (final match in pageRoute.allMatches(route)) {
-          for (final group in match.groupNames) {
-            args[group] = match.namedGroup(group) ?? '';
-          }
-        }
-        final data = await pageValue.loader(args);
-        final _child = pageValue.builder(context, data, Container());
-        if (route.split('/').length > 1) {
-          
-        }
-        if (mounted) setState(() => _page = _child);
-        return;
-      }
+    Widget? _child = await getRoute(context, route, pages, null);
+    if (_child == null) {
+      final _unknown = await getRoute(context, '404', pages, null);
+      _child = _unknown ?? Container();
     }
+    if (mounted) setState(() => _page = _child!);
   }
 
   @override
@@ -60,9 +49,14 @@ class _GeneratedRouterState extends State<GeneratedRouter> {
         loadRoute();
         return true;
       },
-      child: _page,
+      child: MaterialApp(
+        home: _page,
+        restorationScopeId: route,
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData.light(),
+        darkTheme: ThemeData.dark(),
+        themeMode: ThemeMode.system,
+      ),
     );
   }
-
 }
-

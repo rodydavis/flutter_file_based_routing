@@ -20,6 +20,7 @@ void main(List<String> args) {
 
 class GeneratedRouter {
   final Map<String, String> routes = {};
+  final sb = StringBuffer();
 
   void analyzeFile(File file) {
     if (!file.existsSync()) return;
@@ -44,95 +45,80 @@ class GeneratedRouter {
     }
   }
 
+  add(String value) => sb.writeln(value);
+  empty() => sb.writeln();
+
   generate() {
-    final sb = StringBuffer();
-    sb.writeln('import \'dart:ui\';');
-    sb.writeln('import \'package:flutter/material.dart\';');
-    sb.writeln('');
+    sb.clear();
+    add('import \'dart:ui\';');
+    add('import \'package:flutter/material.dart\';');
+    empty();
     final allRoutes = routes.entries.toList();
     for (int i = 0; i < allRoutes.length; i++) {
       final entry = allRoutes[i];
       final route = entry.key;
-      sb.writeln('import \'pages/${route}.dart\' as route${i};');
+      add('import \'pages/${route}.dart\' as route${i};');
     }
-    sb.writeln("import 'router.dart';");
-    sb.writeln('');
-    sb.writeln('class GeneratedRouter extends StatefulWidget {');
-    sb.writeln('  const GeneratedRouter({Key? key}) : super(key: key);');
-    sb.writeln('  @override');
-    sb.writeln(
-        '  _GeneratedRouterState createState() => _GeneratedRouterState();');
-    sb.writeln('}');
-    sb.writeln('');
-    sb.writeln('class _GeneratedRouterState extends State<GeneratedRouter> {');
-    sb.writeln(
-        "  String route = PlatformDispatcher.instance.defaultRouteName;");
-    sb.writeln("  final Map<String, UiRoute> pages = {};");
-    sb.writeln("  Widget _page = Container();");
-    sb.writeln('');
-    sb.writeln('  @override');
-    sb.writeln('  void initState() {');
-    sb.writeln('    super.initState();');
+    add("import 'router.dart';");
+    empty();
+    add('class GeneratedRouter extends StatefulWidget {');
+    add('  const GeneratedRouter({Key? key}) : super(key: key);');
+    add('  @override');
+    add('  _GeneratedRouterState createState() => _GeneratedRouterState();');
+    add('}');
+    empty();
+    add('class _GeneratedRouterState extends State<GeneratedRouter> {');
+    add("  String route = PlatformDispatcher.instance.defaultRouteName;");
+    add("  final Map<String, UiRoute> pages = {};");
+    add("  Widget _page = Container();");
+    empty();
+    add('  @override');
+    add('  void initState() {');
+    add('    super.initState();');
     for (int i = 0; i < allRoutes.length; i++) {
       final entry = allRoutes[i];
       final route = "/" + entry.key;
       final name = entry.value;
       final fixedRoute = route.replaceAll('/index', '/');
-      sb.writeln("    pages['$fixedRoute'] = route${i}.${name}();");
+      if (fixedRoute == '/root') {
+        add("    pages[''] = route${i}.${name}();");
+        continue;
+      }
+      add("    pages['$fixedRoute'] = route${i}.${name}();");
     }
-    sb.writeln("    loadRoute();");
-    sb.writeln('  }');
-    sb.writeln('');
-    sb.writeln("  void loadRoute() async {");
-    sb.writeln("    for (final page in pages.entries) {");
-    sb.writeln("      final pageRoute = RegExp(page.key);");
-    sb.writeln("      if (pageRoute.hasMatch(route)) {");
-    sb.writeln("        final pageValue = page.value;");
-    sb.writeln("        final args = <String, String>{};");
-    sb.writeln("        for (final match in pageRoute.allMatches(route)) {");
-    sb.writeln("          for (final group in match.groupNames) {");
-    sb.writeln("            args[group] = match.namedGroup(group) ?? '';");
-    sb.writeln("          }");
-    sb.writeln("        }");
-    sb.writeln("        final data = await pageValue.loader(args);");
-    sb.writeln(
-        "        final _child = pageValue.builder(context, data, Container());");    
-    sb.writeln("        if (mounted) setState(() => _page = _child);");
-    sb.writeln("        return;");
-    sb.writeln("      }");
-    sb.writeln("    }");
-    sb.writeln("  }");
-    sb.writeln('');
-    sb.writeln('  @override');
-    sb.writeln('  Widget build(BuildContext context) {');
-    sb.writeln('    return NotificationListener<RoutingRequest>(');
-    sb.writeln('      onNotification: (notification) {');
-    sb.writeln(
-        '        if (mounted) setState(() => route = notification.route);');
-    sb.writeln('        loadRoute();');
-    sb.writeln('        return true;');
-    sb.writeln('      },');
-    sb.writeln('      child: _page,');
-    sb.writeln('    );');
-    sb.writeln('  }');
-    sb.writeln('');
-    sb.writeln('}');
-    sb.writeln('');
-    // for (int i = 0; i < allRoutes.length; i++) {
-    //   final entry = allRoutes[i];
-    //   final name = entry.value;
-    //   if (name.contains('/')) continue;
-    //   final related = allRoutes.where((e) => e.value.startsWith(name) && e.key != entry.key);
-    //   sb.writeln('class ${name}Route extends StatelessWidget {');
-    //   sb.writeln('  @override');
-    //   sb.writeln('  Widget build(BuildContext context) {');
-    //   sb.writeln('    // Related: ${related.length}');
-    //   sb.writeln('    final page = route${i}.${name}();');
-    //   sb.writeln('    return Container();');
-    //   sb.writeln('  }');
-    //   sb.writeln('}');
-    //   sb.writeln('');
-    // }
+    add("    loadRoute();");
+    add('  }');
+    empty();
+    add("  void loadRoute() async {");
+    add("     Widget? _child = await getRoute(context, route, pages, null);");
+    add("     if (_child == null) {");
+    add("       final _unknown = await getRoute(context, '404', pages, null);");
+    add("       _child = _unknown ?? Container();");
+    add("     }");
+    add("     if (mounted) setState(() => _page = _child!);");
+    add("  }");
+    empty();
+    add('  @override');
+    add('  Widget build(BuildContext context) {');
+    add('    return NotificationListener<RoutingRequest>(');
+    add('      onNotification: (notification) {');
+    add('        if (mounted) setState(() => route = notification.route);');
+    add('        loadRoute();');
+    add('        return true;');
+    add('      },');
+    add("      child: MaterialApp(");
+    add("          home: _page,");
+    add("          debugShowCheckedModeBanner: false,");
+    add("          restorationScopeId: route,");
+    add("          theme: ThemeData.light(),");
+    add("          darkTheme: ThemeData.dark(),");
+    add("          themeMode: ThemeMode.system,");
+    add("      ),");
+    add('    );');
+    add('  }');
+    empty();
+    add('}');
+    empty();
     if (!outFile.existsSync()) outFile.createSync(recursive: true);
     outFile.writeAsStringSync(sb.toString());
   }
