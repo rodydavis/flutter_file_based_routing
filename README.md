@@ -109,7 +109,7 @@ import '../../router.dart';
 
 class AccountPage extends UiRoute<Map<String, String>> {
   @override
-  loader(args) => args;
+  loader(route, args) => args;
 
   @override
   Widget builder(
@@ -137,6 +137,10 @@ RoutingRequest('ROUTE_HERE').dispatch(context)
 ```
 
 `ROUTE_HERE` should be the named of your route like `/about/30`.
+
+## Storing state
+
+Everything should be stateless, but in the example you can see that even bottom tab navigation index can be done just with the route.
 
 ## Conclusion
 

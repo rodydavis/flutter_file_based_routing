@@ -4,12 +4,15 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 
 abstract class ApiRoute<T> {
-  FutureOr<T?> loader(Map<String, String> args) {
+  FutureOr<T?> loader(String route, Map<String, String> args) {
     return null;
   }
 }
 
 abstract class UiRoute<T> extends ApiRoute<T> {
+  bool shouldCache = true;
+  String currentRoute = '';
+
   Widget builder(BuildContext context, T data, Widget? child) {
     return child ?? Container();
   }
@@ -56,15 +59,17 @@ Future<Widget?> getRoute(
   BuildContext context,
   String route,
   Map<String, UiRoute> pages,
-  Widget? child, [
+  Widget? child, {
   bool subRoutes = true,
-]) async {
+  String? currentRoute,
+}) async {
   if (_cache.containsKey(route)) return _cache[route];
   final page = getUiRoute(route, pages);
   if (page == null) return null;
   final pageValue = page.key;
   final pageArgs = page.value;
-  final data = await pageValue.loader(pageArgs);
+  pageValue.currentRoute = currentRoute ?? route;
+  final data = await pageValue.loader(pageValue.currentRoute, pageArgs);
   Widget _child = pageValue.builder(context, data, child);
   if (!subRoutes) return _child;
   String _route = route;
@@ -72,15 +77,30 @@ Future<Widget?> getRoute(
     final List<String> routeParts = _route.split('/');
     routeParts.removeLast();
     _route = routeParts.join('/');
-    if (_route == '/') break;
-    final childWidget = await getRoute(context, _route, pages, _child, false);
+    if (_route == '/' || _route.isEmpty) break;
+    final childWidget = await getRoute(
+      context,
+      _route,
+      pages,
+      _child,
+      subRoutes: false,
+      currentRoute: route,
+    );
     if (childWidget == null) continue;
     _child = childWidget;
   }
   _route = '';
-  final childWidget = await getRoute(context, _route, pages, _child, false);
+  final childWidget = await getRoute(
+    context,
+    _route,
+    pages,
+    _child,
+    subRoutes: false,
+    currentRoute: route,
+  );
   if (childWidget != null) _child = childWidget;
-  return _cache[route] = _child;
+  if (pageValue.shouldCache) return _cache[route] = _child;
+  return _child;
 }
 
 RegExp _fixRegExp(String name) {

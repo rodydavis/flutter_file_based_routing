@@ -4,7 +4,7 @@ import '../../router.dart';
 
 class AccountPage extends UiRoute<Map<String, String>> {
   @override
-  loader(args) => args;
+  loader(route, args) => args;
 
   @override
   Widget builder(
