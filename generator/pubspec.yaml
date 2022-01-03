@@ -1,0 +1,11 @@
+name: flutter_file_based_routing
+description: A new Flutter project.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=2.0.0 <3.0.0"
+
+dependencies:
+  flutter_ast:
+    path: third_party/flutter_ast

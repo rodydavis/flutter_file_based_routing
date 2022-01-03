@@ -1,0 +1,3 @@
+[submodule "third_party/flutter_ast"]
+	path = generator/third_party/flutter_ast
+	url = https://github.com/rodydavis/flutter_ast
