@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:collection/collection.dart';
 
 import 'package:flutter/material.dart';
 
@@ -24,18 +25,26 @@ class RoutingRequest extends Notification {
 }
 
 MapEntry<UiRoute, Map<String, String>>? getUiRoute(
-    String route, Map<String, UiRoute> pages) {
-  for (final page in pages.entries) {
-    final pageRoute = RegExp(page.key);
-    if (pageRoute.hasMatch(route)) {
-      final pageValue = page.value;
-      final args = <String, String>{};
-      for (final match in pageRoute.allMatches(route)) {
-        for (final group in match.groupNames) {
-          args[group] = match.namedGroup(group) ?? '';
-        }
-      }
-      return MapEntry(pageValue, args);
+  String route,
+  Map<String, UiRoute> pages,
+) {
+  if (route == '/' || route.isEmpty) {
+    final page = pages[route];
+    if (page != null) return MapEntry(page, {});
+    return null;
+  }
+  final match =
+      pages.entries.toList().firstWhereOrNull((elem) => elem.key == route);
+  if (match != null) return MapEntry(match.value, {});
+
+  for (final page in pages.entries.toList().reversed) {
+    if (page.key == '/' || page.key.isEmpty) continue;
+    if (page.key == route) return MapEntry(page.value, {});
+    final pageRoute = _fixRegExp(page.key);
+    final pageMatch = pageRoute.hasMatch(_cleanRouteName(route));
+    if (pageMatch) {
+      final args = _getArgs(route, page.key, page.value);
+      return MapEntry(page.value, args);
     }
   }
   return null;
@@ -57,9 +66,10 @@ Future<Widget?> getRoute(
   if (!subRoutes) return _child;
   String _route = route;
   while (_route.isNotEmpty) {
-    final lastIndex = _route.lastIndexOf('/');
-    if (lastIndex == -1) break;
-    _route = _route.substring(0, lastIndex);
+    final List<String> routeParts = _route.split('/');
+    routeParts.removeLast();
+    _route = routeParts.join('/');
+    if (_route == '/') break;
     final childWidget = await getRoute(context, _route, pages, _child, false);
     if (childWidget == null) continue;
     _child = childWidget;
@@ -68,4 +78,48 @@ Future<Widget?> getRoute(
   final childWidget = await getRoute(context, _route, pages, _child, false);
   if (childWidget != null) _child = childWidget;
   return _child;
+}
+
+RegExp _fixRegExp(String name) {
+  final cleanRouteName = _cleanRouteName(name);
+  const variableRegex = '[a-zA-Z0-9_-]+';
+  final nameWithParameters = cleanRouteName.replaceAllMapped(
+    RegExp(":($variableRegex)"),
+    (match) {
+      final groupName = match.group(1);
+      return "(?<$groupName>[a-zA-Z0-9_\\\-\.,:;\+*^%\$@!]+)";
+    },
+  );
+  final fixed = "^$nameWithParameters\$";
+  return RegExp(fixed, caseSensitive: false);
+}
+
+String _cleanRouteName(String name) {
+  name = name.trim();
+  final parts = name.split("/");
+  parts.removeWhere((value) => value == "");
+  parts.map((value) {
+    if (value.startsWith(":")) {
+      return value;
+    } else {
+      return value.toLowerCase();
+    }
+  });
+  name = parts.join("/");
+  return name;
+}
+
+Map<String, String> _getArgs(
+  String route,
+  String pageKey,
+  UiRoute pageValue,
+) {
+  final pageRoute = _fixRegExp(pageKey);
+  final args = <String, String>{};
+  for (final match in pageRoute.allMatches(_cleanRouteName(route))) {
+    for (final group in match.groupNames) {
+      args[group] = match.namedGroup(group) ?? '';
+    }
+  }
+  return args;
 }

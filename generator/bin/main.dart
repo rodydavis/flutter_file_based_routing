@@ -54,6 +54,7 @@ class GeneratedRouter {
     add('import \'package:flutter/material.dart\';');
     empty();
     final allRoutes = routes.entries.toList();
+    allRoutes.sort((a, b) => a.key.compareTo(b.key));
     for (int i = 0; i < allRoutes.length; i++) {
       final entry = allRoutes[i];
       final route = entry.key;
@@ -108,6 +109,7 @@ class GeneratedRouter {
     add('      },');
     add("      child: MaterialApp(");
     add("          home: _page,");
+    add("          key: ValueKey(route),");
     add("          debugShowCheckedModeBanner: false,");
     add("          restorationScopeId: route,");
     add("          theme: ThemeData.light(),");

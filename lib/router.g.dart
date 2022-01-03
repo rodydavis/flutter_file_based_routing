@@ -1,12 +1,13 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-import 'pages/index.dart' as route0;
-import 'pages/about.dart' as route1;
-import 'pages/root.dart' as route2;
+import 'pages/about.dart' as route0;
+import 'pages/about/:id.dart' as route1;
+import 'pages/about/guest.dart' as route2;
 import 'pages/about/index.dart' as route3;
-import 'pages/about/:id.dart' as route4;
-import 'pages/about/guest.dart' as route5;
+import 'pages/index.dart' as route4;
+import 'pages/root.dart' as route5;
+import 'pages/settings.dart' as route6;
 import 'router.dart';
 
 class GeneratedRouter extends StatefulWidget {
@@ -23,22 +24,23 @@ class _GeneratedRouterState extends State<GeneratedRouter> {
   @override
   void initState() {
     super.initState();
-    pages['/'] = route0.HomePage();
-    pages['/about'] = route1.AboutPage();
-    pages[''] = route2.RootPage();
+    pages['/about'] = route0.AboutPage();
+    pages['/about/:id'] = route1.AccountPage();
+    pages['/about/guest'] = route2.GuestPage();
     pages['/about/'] = route3.AboutDetails();
-    pages['/about/:id'] = route4.AccountPage();
-    pages['/about/guest'] = route5.GuestPage();
+    pages['/'] = route4.HomePage();
+    pages[''] = route5.RootPage();
+    pages['/settings'] = route6.SettingsPage();
     loadRoute();
   }
 
   void loadRoute() async {
-    Widget? _child = await getRoute(context, route, pages, null);
-    if (_child == null) {
-      final _unknown = await getRoute(context, '404', pages, null);
-      _child = _unknown ?? Container();
-    }
-    if (mounted) setState(() => _page = _child!);
+     Widget? _child = await getRoute(context, route, pages, null);
+     if (_child == null) {
+       final _unknown = await getRoute(context, '404', pages, null);
+       _child = _unknown ?? Container();
+     }
+     if (mounted) setState(() => _page = _child!);
   }
 
   @override
@@ -50,13 +52,16 @@ class _GeneratedRouterState extends State<GeneratedRouter> {
         return true;
       },
       child: MaterialApp(
-        home: _page,
-        restorationScopeId: route,
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData.light(),
-        darkTheme: ThemeData.dark(),
-        themeMode: ThemeMode.system,
+          home: _page,
+          key: ValueKey(route),
+          debugShowCheckedModeBanner: false,
+          restorationScopeId: route,
+          theme: ThemeData.light(),
+          darkTheme: ThemeData.dark(),
+          themeMode: ThemeMode.system,
       ),
     );
   }
+
 }
+
