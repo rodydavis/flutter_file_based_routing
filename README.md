@@ -1,4 +1,4 @@
-# flutter_file_based_routing
+# Flutter File Based Routing
 
 I was inspired by the routing in [remix.run](https://remix.run/) with nested layouts and server side components so I decided to experiment with flutter.
 
