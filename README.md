@@ -17,7 +17,7 @@ This will generate a `router.g.dart` which can be used to import the generated w
 ```dart
 import 'package:flutter/material.dart';
 
-import 'router.g.dart';
+import 'generated.g.dart';
 
 void main() {
   runApp(GeneratedApp(
