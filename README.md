@@ -16,7 +16,7 @@ You need to install dart locally on your machine then you can run the following 
 dart generator/bin/main.dart
 ```
 
-This will generate a `router.g.dart` which can be used to import the generated widget to run the application.
+This will generate a `generated.g.dart` which can be used to import the generated widget to run the application.
 
 ```dart
 import 'package:flutter/material.dart';
