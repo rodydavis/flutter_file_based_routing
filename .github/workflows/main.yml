@@ -21,10 +21,10 @@ jobs:
           flutter config --enable-web
           flutter pub get
       - name: Build
-        run: flutter build web
+        run: flutter build web --base-href /flutter_file_based_routing/
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./example/build/web
+          publish_dir: ./build/web
