@@ -1,8 +1,12 @@
+[![github pages](https://github.com/rodydavis/flutter_file_based_routing/actions/workflows/main.yml/badge.svg)](https://github.com/rodydavis/flutter_file_based_routing/actions/workflows/main.yml)
+
 # Flutter File Based Routing
 
 I was inspired by the routing in [remix.run](https://remix.run/) with nested layouts and server side components so I decided to experiment with flutter.
 
 Since this needs to be at compile time I wrote a generator to parse the pages directory for file based routing path names to define the regex like [regex_router](https://pub.dev/packages/regex_router).
+
+[Demo](https://rodydavis.github.io/flutter_file_based_routing/)
 
 ## Installation
 
