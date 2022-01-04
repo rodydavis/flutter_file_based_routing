@@ -54,6 +54,7 @@ class GeneratedRouter {
     add('import \'dart:async\';');
     add('import \'package:collection/collection.dart\';');
     add('import \'package:flutter/material.dart\';');
+    add('import \'package:flutter/services.dart\';');
     empty();
     final allRoutes = routes.entries.toList();
     allRoutes.sort((a, b) => a.key.compareTo(b.key));
@@ -97,6 +98,7 @@ class GeneratedRouter {
       }
       add("    pages['$fixedRoute'] = route${i}.${name}();");
     }
+    add("    SystemNavigator.selectSingleEntryHistory();");
     add("    loadRoute();");
     add('  }');
     empty();
@@ -107,6 +109,7 @@ class GeneratedRouter {
     add("       _child = _unknown ?? Container();");
     add("     }");
     add("     if (mounted) setState(() => _page = _child!);");
+    add("     SystemNavigator.routeInformationUpdated(location: route);");
     add("  }");
     empty();
     add('  @override');
@@ -143,8 +146,9 @@ class GeneratedRouter {
     add("        }");
     add('        return true;');
     add('      },');
-    add("      child: MaterialApp(");
-    add("          home: _page,");
+    add("      child: MaterialApp.router(");
+    add("          routerDelegate: _RouterDelegate(_page),");
+    add("          routeInformationParser: _RouteInformationParser(),");
     add("          key: ValueKey(route),");
     add("          debugShowCheckedModeBanner: false,");
     add("          restorationScopeId: route,");
@@ -157,110 +161,135 @@ class GeneratedRouter {
     empty();
     add('}');
     empty();
-    add(" abstract class ApiRoute<T> {");
-    add("   FutureOr<T?> loader(String route, Map<String, String> args) {");
-    add("     return null;");
-    add("   }");
-    add(" }");
-    empty();
-    add(" abstract class UiRoute<T> extends ApiRoute<T> {");
-    add("   bool shouldCache = true;");
-    add("   String currentRoute = '';");
-    empty();
-    add("   Widget builder(BuildContext context, T data, Widget? child) {");
-    add("     return child ?? Container();");
-    add("   }");
-    empty();
-    add("   navigate(BuildContext context, String route) {");
-    add("     RoutingRequest(route).dispatch(context);");
-    add("   }");
-    add(" }");
-    empty();
-    add("abstract class _RoutingRequest extends Notification {}");
-    add("class RoutingRequest extends _RoutingRequest {");
-    add("  final String route;");
-    add("  RoutingRequest(this.route);");
-    add("}");
-    add("class BackRequest extends _RoutingRequest {}");
-    add("class ForwardRequest extends _RoutingRequest {}");
-    empty();
-    add(" MapEntry<UiRoute, Map<String, String>>? _getUiRoute(");
-    add("   String route,");
-    add("   Map<String, UiRoute> pages,");
-    add(" ) {");
-    add("   if (route == '/' || route.isEmpty) {");
-    add("     final page = pages[route];");
-    add("     if (page != null) return MapEntry(page, {});");
-    add("     return null;");
-    add("   }");
-    add("   final match =");
-    add("       pages.entries.toList().firstWhereOrNull((elem) => elem.key == route);");
-    add("   if (match != null) return MapEntry(match.value, {});");
-    empty();
-    add("   for (final page in pages.entries.toList().reversed) {");
-    add("     if (page.key == '/' || page.key.isEmpty) continue;");
-    add("     if (page.key == route) return MapEntry(page.value, {});");
-    add("     final pageRoute = _fixRegExp(page.key);");
-    add("     final pageMatch = pageRoute.hasMatch(_cleanRouteName(route));");
-    add("     if (pageMatch) {");
-    add("       final args = _getArgs(route, page.key, page.value);");
-    add("       return MapEntry(page.value, args);");
-    add("     }");
-    add("   }");
-    add("   return null;");
-    add(" }");
-    empty();
-    add(" final _cache = <String, Widget>{};");
-    empty();
-    add(" Future<Widget?> _getRoute(");
-    add("   BuildContext context,");
-    add("   String route,");
-    add("   Map<String, UiRoute> pages,");
-    add("   Widget? child, {");
-    add("   bool subRoutes = true,");
-    add("   String? currentRoute,");
-    add(" }) async {");
-    add("   if (_cache.containsKey(route)) return _cache[route];");
-    add("   final page = _getUiRoute(route, pages);");
-    add("   if (page == null) return null;");
-    add("   final pageValue = page.key;");
-    add("   final pageArgs = page.value;");
-    add("   pageValue.currentRoute = currentRoute ?? route;");
-    add("   final data = await pageValue.loader(pageValue.currentRoute, pageArgs);");
-    add("   Widget _child = pageValue.builder(context, data, child);");
-    add("   if (!subRoutes) return _child;");
-    add("   String _route = route;");
-    add("   while (_route.isNotEmpty) {");
-    add("     final List<String> routeParts = _route.split('/');");
-    add("     routeParts.removeLast();");
-    add("     _route = routeParts.join('/');");
-    add("     if (_route == '/' || _route.isEmpty) break;");
-    add("     final childWidget = await _getRoute(");
-    add("       context,");
-    add("       _route,");
-    add("       pages,");
-    add("       _child,");
-    add("       subRoutes: false,");
-    add("       currentRoute: route,");
-    add("     );");
-    add("     if (childWidget == null) continue;");
-    add("     _child = childWidget;");
-    add("   }");
-    add("   _route = '';");
-    add("   final childWidget = await _getRoute(");
-    add("     context,");
-    add("     _route,");
-    add("     pages,");
-    add("     _child,");
-    add("     subRoutes: false,");
-    add("     currentRoute: route,");
-    add("   );");
-    add("   if (childWidget != null) _child = childWidget;");
-    add("   if (pageValue.shouldCache) return _cache[route] = _child;");
-    add("   return _child;");
-    add(" }");
-    empty();
     add(r"""
+    abstract class ApiRoute<T> {
+      FutureOr<T?> loader(String route, Map<String, String> args) {
+        return null;
+      }
+    }
+
+    abstract class UiRoute<T> extends ApiRoute<T> {
+      bool shouldCache = true;
+      String currentRoute = '';
+
+      Widget builder(BuildContext context, T data, Widget? child) {
+        return child ?? Container();
+      }
+
+      navigate(BuildContext context, String route) {
+        RoutingRequest(route).dispatch(context);
+      }
+    }
+
+    abstract class _RoutingRequest extends Notification {}
+
+    class RoutingRequest extends _RoutingRequest {
+      final String route;
+      RoutingRequest(this.route);
+    }
+
+    class BackRequest extends _RoutingRequest {}
+
+    class ForwardRequest extends _RoutingRequest {}
+
+    final _cache = <String, Widget>{};
+
+    MapEntry<UiRoute, Map<String, String>>? _getUiRoute(
+      String route,
+      Map<String, UiRoute> pages,
+    ) {
+      if (route == '/' || route.isEmpty) {
+        final page = pages[route];
+        if (page != null) return MapEntry(page, {});
+        return null;
+      }
+      final match =
+          pages.entries.toList().firstWhereOrNull((elem) => elem.key == route);
+      if (match != null) return MapEntry(match.value, {});
+
+      for (final page in pages.entries.toList().reversed) {
+        if (page.key == '/' || page.key.isEmpty) continue;
+        if (page.key == route) return MapEntry(page.value, {});
+        final pageRoute = _fixRegExp(page.key);
+        final pageMatch = pageRoute.hasMatch(_cleanRouteName(route));
+        if (pageMatch) {
+          final args = _getArgs(route, page.key, page.value);
+          return MapEntry(page.value, args);
+        }
+      }
+      return null;
+    }
+
+    Future<Widget?> _getRoute(
+      BuildContext context,
+      String route,
+      Map<String, UiRoute> pages,
+      Widget? child, {
+      bool subRoutes = true,
+      String? currentRoute,
+    }) async {
+      if (_cache.containsKey(route)) return _cache[route];
+      final page = _getUiRoute(route, pages);
+      if (page == null) return null;
+      final pageValue = page.key;
+      final pageArgs = page.value;
+      pageValue.currentRoute = currentRoute ?? route;
+      final data = await pageValue.loader(pageValue.currentRoute, pageArgs);
+      Widget _child = pageValue.builder(context, data, child);
+      if (!subRoutes) return _child;
+      String _route = route;
+      while (_route.isNotEmpty) {
+        final List<String> routeParts = _route.split('/');
+        routeParts.removeLast();
+        _route = routeParts.join('/');
+        if (_route == '/' || _route.isEmpty) break;
+        final childWidget = await _getRoute(
+          context,
+          _route,
+          pages,
+          _child,
+          subRoutes: false,
+          currentRoute: route,
+        );
+        if (childWidget == null) continue;
+        _child = childWidget;
+      }
+      _route = '';
+      final childWidget = await _getRoute(
+        context,
+        _route,
+        pages,
+        _child,
+        subRoutes: false,
+        currentRoute: route,
+      );
+      if (childWidget != null) _child = childWidget;
+      if (pageValue.shouldCache) return _cache[route] = _child;
+      return _child;
+    }
+
+    class _RouterDelegate extends RouterDelegate<Object>
+        with ChangeNotifier, PopNavigatorRouterDelegateMixin<Object> {
+      _RouterDelegate(this.child);
+      final Widget child;
+
+      @override
+      Widget build(BuildContext context) => child;
+
+      @override
+      final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+      @override
+      Future<void> setNewRoutePath(configuration) async {}
+    }
+
+    class _RouteInformationParser extends RouteInformationParser<Object> {
+      @override
+      Future<Object> parseRouteInformation(RouteInformation routeInformation) {
+        return Future<Object>.value(routeInformation.location);
+      }
+    }
+
     RegExp _fixRegExp(String name) {
       final cleanRouteName = _cleanRouteName(name);
       const variableRegex = '[a-zA-Z0-9_-]+';
@@ -289,7 +318,7 @@ class GeneratedRouter {
       name = parts.join('/');
       return name;
     }
-    
+
     Map<String, String> _getArgs(
       String route,
       String pageKey,
