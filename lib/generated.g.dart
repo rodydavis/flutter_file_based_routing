@@ -14,10 +14,10 @@ import 'pages/settings.dart' as route6;
 
 class GeneratedApp extends StatefulWidget {
   const GeneratedApp({
-     Key? key,
-     this.theme,
-     this.darkTheme,
-     this.themeMode,
+    Key? key,
+    this.theme,
+    this.darkTheme,
+    this.themeMode,
   }) : super(key: key);
   final ThemeData? theme, darkTheme;
   final ThemeMode? themeMode;
@@ -47,13 +47,13 @@ class _GeneratedAppState extends State<GeneratedApp> {
   }
 
   void loadRoute() async {
-     Widget? _child = await _getRoute(context, route, pages, null);
-     if (_child == null) {
-       final _unknown = await _getRoute(context, '404', pages, null);
-       _child = _unknown ?? Container();
-     }
-     if (mounted) setState(() => _page = _child!);
-     SystemNavigator.routeInformationUpdated(location: route);
+    Widget? _child = await _getRoute(context, route, pages, null);
+    if (_child == null) {
+      final _unknown = await _getRoute(context, '404', pages, null);
+      _child = _unknown ?? Container();
+    }
+    if (mounted) setState(() => _page = _child!);
+    SystemNavigator.routeInformationUpdated(location: route);
   }
 
   @override
@@ -91,190 +91,194 @@ class _GeneratedAppState extends State<GeneratedApp> {
         return true;
       },
       child: MaterialApp.router(
-          routerDelegate: _RouterDelegate(_page),
-          routeInformationParser: _RouteInformationParser(),
-          key: ValueKey(route),
-          debugShowCheckedModeBanner: false,
-          restorationScopeId: route,
-          theme: widget.theme,
-          darkTheme: widget.darkTheme,
-          themeMode: widget.themeMode,
+        routerDelegate: _RouterDelegate(_page),
+        routeInformationParser: _RouteInformationParser(),
+        builder: (context, child) {
+          return Overlay(
+            initialEntries: [
+              OverlayEntry(builder: (context) => child ?? Container()),
+            ],
+          );
+        },
+        key: ValueKey(route),
+        debugShowCheckedModeBanner: false,
+        restorationScopeId: route,
+        theme: widget.theme,
+        darkTheme: widget.darkTheme,
+        themeMode: widget.themeMode,
       ),
     );
   }
-
 }
 
-    abstract class ApiRoute<T> {
-      FutureOr<T?> loader(String route, Map<String, String> args) {
-        return null;
-      }
+abstract class ApiRoute<T> {
+  FutureOr<T?> loader(String route, Map<String, String> args) {
+    return null;
+  }
+}
+
+abstract class UiRoute<T> extends ApiRoute<T> {
+  bool shouldCache = true;
+  String currentRoute = '';
+
+  Widget builder(BuildContext context, T data, Widget? child) {
+    return child ?? Container();
+  }
+
+  navigate(BuildContext context, String route) {
+    RoutingRequest(route).dispatch(context);
+  }
+}
+
+abstract class _RoutingRequest extends Notification {}
+
+class RoutingRequest extends _RoutingRequest {
+  final String route;
+  RoutingRequest(this.route);
+}
+
+class BackRequest extends _RoutingRequest {}
+
+class ForwardRequest extends _RoutingRequest {}
+
+final _cache = <String, Widget>{};
+
+MapEntry<UiRoute, Map<String, String>>? _getUiRoute(
+  String route,
+  Map<String, UiRoute> pages,
+) {
+  if (route == '/' || route.isEmpty) {
+    final page = pages[route];
+    if (page != null) return MapEntry(page, {});
+    return null;
+  }
+  final match =
+      pages.entries.toList().firstWhereOrNull((elem) => elem.key == route);
+  if (match != null) return MapEntry(match.value, {});
+
+  for (final page in pages.entries.toList().reversed) {
+    if (page.key == '/' || page.key.isEmpty) continue;
+    if (page.key == route) return MapEntry(page.value, {});
+    final pageRoute = _fixRegExp(page.key);
+    final pageMatch = pageRoute.hasMatch(_cleanRouteName(route));
+    if (pageMatch) {
+      final args = _getArgs(route, page.key, page.value);
+      return MapEntry(page.value, args);
     }
+  }
+  return null;
+}
 
-    abstract class UiRoute<T> extends ApiRoute<T> {
-      bool shouldCache = true;
-      String currentRoute = '';
+Future<Widget?> _getRoute(
+  BuildContext context,
+  String route,
+  Map<String, UiRoute> pages,
+  Widget? child, {
+  bool subRoutes = true,
+  String? currentRoute,
+}) async {
+  if (_cache.containsKey(route)) return _cache[route];
+  final page = _getUiRoute(route, pages);
+  if (page == null) return null;
+  final pageValue = page.key;
+  final pageArgs = page.value;
+  pageValue.currentRoute = currentRoute ?? route;
+  final data = await pageValue.loader(pageValue.currentRoute, pageArgs);
+  Widget _child = pageValue.builder(context, data, child);
+  if (!subRoutes) return _child;
+  String _route = route;
+  while (_route.isNotEmpty) {
+    final List<String> routeParts = _route.split('/');
+    routeParts.removeLast();
+    _route = routeParts.join('/');
+    if (_route == '/' || _route.isEmpty) break;
+    final childWidget = await _getRoute(
+      context,
+      _route,
+      pages,
+      _child,
+      subRoutes: false,
+      currentRoute: route,
+    );
+    if (childWidget == null) continue;
+    _child = childWidget;
+  }
+  _route = '';
+  final childWidget = await _getRoute(
+    context,
+    _route,
+    pages,
+    _child,
+    subRoutes: false,
+    currentRoute: route,
+  );
+  if (childWidget != null) _child = childWidget;
+  if (pageValue.shouldCache) return _cache[route] = _child;
+  return _child;
+}
 
-      Widget builder(BuildContext context, T data, Widget? child) {
-        return child ?? Container();
-      }
+class _RouterDelegate extends RouterDelegate<Object>
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<Object> {
+  _RouterDelegate(this.child);
+  final Widget child;
 
-      navigate(BuildContext context, String route) {
-        RoutingRequest(route).dispatch(context);
-      }
+  @override
+  Widget build(BuildContext context) => child;
+
+  @override
+  final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  Future<void> setNewRoutePath(configuration) async {}
+}
+
+class _RouteInformationParser extends RouteInformationParser<Object> {
+  @override
+  Future<Object> parseRouteInformation(RouteInformation routeInformation) {
+    return Future<Object>.value(routeInformation.location);
+  }
+}
+
+RegExp _fixRegExp(String name) {
+  final cleanRouteName = _cleanRouteName(name);
+  const variableRegex = '[a-zA-Z0-9_-]+';
+  final nameWithParameters = cleanRouteName.replaceAllMapped(
+    RegExp(":($variableRegex)"),
+    (match) {
+      final groupName = match.group(1);
+      return "(?<$groupName>[a-zA-Z0-9_\\\-\.,:;\+*^%\$@!]+)";
+    },
+  );
+  final fixed = "^$nameWithParameters\$";
+  return RegExp(fixed, caseSensitive: false);
+}
+
+String _cleanRouteName(String name) {
+  name = name.trim();
+  final parts = name.split('/');
+  parts.removeWhere((value) => value == "");
+  parts.map((value) {
+    if (value.startsWith(':')) {
+      return value;
+    } else {
+      return value.toLowerCase();
     }
+  });
+  name = parts.join('/');
+  return name;
+}
 
-    abstract class _RoutingRequest extends Notification {}
-
-    class RoutingRequest extends _RoutingRequest {
-      final String route;
-      RoutingRequest(this.route);
+Map<String, String> _getArgs(
+  String route,
+  String pageKey,
+  UiRoute pageValue,
+) {
+  final pageRoute = _fixRegExp(pageKey);
+  final args = <String, String>{};
+  for (final match in pageRoute.allMatches(_cleanRouteName(route))) {
+    for (final group in match.groupNames) {
+      args[group] = match.namedGroup(group) ?? '';
     }
-
-    class BackRequest extends _RoutingRequest {}
-
-    class ForwardRequest extends _RoutingRequest {}
-
-    final _cache = <String, Widget>{};
-
-    MapEntry<UiRoute, Map<String, String>>? _getUiRoute(
-      String route,
-      Map<String, UiRoute> pages,
-    ) {
-      if (route == '/' || route.isEmpty) {
-        final page = pages[route];
-        if (page != null) return MapEntry(page, {});
-        return null;
-      }
-      final match =
-          pages.entries.toList().firstWhereOrNull((elem) => elem.key == route);
-      if (match != null) return MapEntry(match.value, {});
-
-      for (final page in pages.entries.toList().reversed) {
-        if (page.key == '/' || page.key.isEmpty) continue;
-        if (page.key == route) return MapEntry(page.value, {});
-        final pageRoute = _fixRegExp(page.key);
-        final pageMatch = pageRoute.hasMatch(_cleanRouteName(route));
-        if (pageMatch) {
-          final args = _getArgs(route, page.key, page.value);
-          return MapEntry(page.value, args);
-        }
-      }
-      return null;
-    }
-
-    Future<Widget?> _getRoute(
-      BuildContext context,
-      String route,
-      Map<String, UiRoute> pages,
-      Widget? child, {
-      bool subRoutes = true,
-      String? currentRoute,
-    }) async {
-      if (_cache.containsKey(route)) return _cache[route];
-      final page = _getUiRoute(route, pages);
-      if (page == null) return null;
-      final pageValue = page.key;
-      final pageArgs = page.value;
-      pageValue.currentRoute = currentRoute ?? route;
-      final data = await pageValue.loader(pageValue.currentRoute, pageArgs);
-      Widget _child = pageValue.builder(context, data, child);
-      if (!subRoutes) return _child;
-      String _route = route;
-      while (_route.isNotEmpty) {
-        final List<String> routeParts = _route.split('/');
-        routeParts.removeLast();
-        _route = routeParts.join('/');
-        if (_route == '/' || _route.isEmpty) break;
-        final childWidget = await _getRoute(
-          context,
-          _route,
-          pages,
-          _child,
-          subRoutes: false,
-          currentRoute: route,
-        );
-        if (childWidget == null) continue;
-        _child = childWidget;
-      }
-      _route = '';
-      final childWidget = await _getRoute(
-        context,
-        _route,
-        pages,
-        _child,
-        subRoutes: false,
-        currentRoute: route,
-      );
-      if (childWidget != null) _child = childWidget;
-      if (pageValue.shouldCache) return _cache[route] = _child;
-      return _child;
-    }
-
-    class _RouterDelegate extends RouterDelegate<Object>
-        with ChangeNotifier, PopNavigatorRouterDelegateMixin<Object> {
-      _RouterDelegate(this.child);
-      final Widget child;
-
-      @override
-      Widget build(BuildContext context) => child;
-
-      @override
-      final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-      @override
-      Future<void> setNewRoutePath(configuration) async {}
-    }
-
-    class _RouteInformationParser extends RouteInformationParser<Object> {
-      @override
-      Future<Object> parseRouteInformation(RouteInformation routeInformation) {
-        return Future<Object>.value(routeInformation.location);
-      }
-    }
-
-    RegExp _fixRegExp(String name) {
-      final cleanRouteName = _cleanRouteName(name);
-      const variableRegex = '[a-zA-Z0-9_-]+';
-      final nameWithParameters = cleanRouteName.replaceAllMapped(
-        RegExp(":($variableRegex)"),
-        (match) {
-          final groupName = match.group(1);
-          return "(?<$groupName>[a-zA-Z0-9_\\\-\.,:;\+*^%\$@!]+)";
-        },
-      );
-      final fixed = "^$nameWithParameters\$";
-      return RegExp(fixed, caseSensitive: false);
-    }
-  
-    String _cleanRouteName(String name) {
-      name = name.trim();
-      final parts = name.split('/');
-      parts.removeWhere((value) => value == "");
-      parts.map((value) {
-        if (value.startsWith(':')) {
-          return value;
-        } else {
-          return value.toLowerCase();
-        }
-      });
-      name = parts.join('/');
-      return name;
-    }
-
-    Map<String, String> _getArgs(
-      String route,
-      String pageKey,
-      UiRoute pageValue,
-    ) {
-      final pageRoute = _fixRegExp(pageKey);
-      final args = <String, String>{};
-      for (final match in pageRoute.allMatches(_cleanRouteName(route))) {
-        for (final group in match.groupNames) {
-          args[group] = match.namedGroup(group) ?? '';
-        }
-      }
-      return args;
-    }
-    
-
+  }
+  return args;
+}

@@ -149,6 +149,13 @@ class GeneratedRouter {
     add("      child: MaterialApp.router(");
     add("          routerDelegate: _RouterDelegate(_page),");
     add("          routeInformationParser: _RouteInformationParser(),");
+    add("          builder: (context, child) {");
+    add("             return Overlay(");
+    add("               initialEntries: [");
+    add("                 OverlayEntry(builder: (context) => child ?? Container()),");
+    add("               ],");
+    add("             );");
+    add("          },");
     add("          key: ValueKey(route),");
     add("          debugShowCheckedModeBanner: false,");
     add("          restorationScopeId: route,");
