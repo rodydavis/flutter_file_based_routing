@@ -20,7 +20,11 @@ import 'package:flutter/material.dart';
 import 'router.g.dart';
 
 void main() {
-  runApp(const GeneratedRouter());
+  runApp(GeneratedApp(
+    themeMode: ThemeMode.system,
+    theme: ThemeData.light(),
+    darkTheme: ThemeData.dark(),
+  ));
 }
 
 ```
@@ -34,7 +38,7 @@ You can define a base layout with the root name. For example: `about.dart`
 ```dart
 import 'package:flutter/material.dart';
 
-import '../router.dart';
+import '../generated.g.dart';
 
 class AboutPage extends UiRoute<void> {
   @override
@@ -61,7 +65,7 @@ You can define the index route for when there are no args needed. For example: `
 ```dart
 import 'package:flutter/material.dart';
 
-import '../../router.dart';
+import '../../generated.g.dart';
 
 class AboutDetails extends UiRoute<void> {
   @override
@@ -83,7 +87,7 @@ You can define a named arg for a route if there is something that does not need 
 ```dart
 import 'package:flutter/material.dart';
 
-import '../../router.dart';
+import '../../generated.g.dart';
 
 class GuestPage extends UiRoute<void> {
   @override
@@ -105,7 +109,7 @@ Sometimes the arg is generated at runtime or needs to be pulled from a database.
 ```dart
 import 'package:flutter/material.dart';
 
-import '../../router.dart';
+import '../../generated.g.dart';
 
 class AccountPage extends UiRoute<Map<String, String>> {
   @override

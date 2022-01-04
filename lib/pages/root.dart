@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../router.dart';
+import '../generated.g.dart';
 
 enum NavIndex { side, bottom }
 

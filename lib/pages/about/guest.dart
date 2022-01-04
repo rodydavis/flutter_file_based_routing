@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../router.dart';
+import '../../generated.g.dart';
 
 class GuestPage extends UiRoute<void> {
   @override

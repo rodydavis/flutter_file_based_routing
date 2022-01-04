@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'router.g.dart';
+import 'generated.g.dart';
 
 void main() {
-  runApp(const GeneratedRouter());
+  runApp(GeneratedApp(
+    themeMode: ThemeMode.system,
+    theme: ThemeData.light(),
+    darkTheme: ThemeData.dark(),
+  ));
 }
