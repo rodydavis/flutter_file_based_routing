@@ -8,6 +8,8 @@ Since this needs to be at compile time I wrote a generator to parse the pages di
 
 [Demo](https://rodydavis.github.io/flutter_file_based_routing/)
 
+Archived in favor of: https://github.com/rodydavis/vscode-router-generator
+
 ## Installation
 
 You need to install dart locally on your machine then you can run the following at your project directory:
